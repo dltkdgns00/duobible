@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  name      String      @unique
+  pinHash   String
+  createdAt DateTime    @default(now())
+  reads     ReadLog[]
+  badges    UserBadge[]
+}
+
+model ReadLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  chapterIndex Int
+  readAt       DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterIndex])
+  @@index([chapterIndex])
+}
+
+model Badge {
+  id          Int         @id @default(autoincrement())
+  key         String      @unique
+  name        String
+  description String
+  minStreak   Int         @default(0)
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  badgeId   Int
+  grantedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}

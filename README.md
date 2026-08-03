@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# duobible
 
-## Getting Started
+교회 오픈채팅용 매일 성경 한 장 읽기 웹.
 
-First, run the development server:
+## 기능
+
+- 시작일 기준 오늘 장 본문 표시
+- 이름 + PIN 4자리 가입/로그인
+- 읽음 체크 / 읽음 취소, 오늘 읽은 사람 목록
+- 관리자에서 연속일·진도 맞추기
+
+## 시작하기 (로컬)
 
 ```bash
+cp .env.example .env
+npm install
+npm run bible:normalize
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env`에서 바꿀 값:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `READING_START_DATE` — 그룹 1일차(창세기 1장) 날짜 (`YYYY-MM-DD`, Asia/Seoul)
+- `SESSION_SECRET` — 32자 이상 비밀값
+- `DATABASE_URL` — 로컬 SQLite (`file:./prisma/dev.db`)
+- `ADMIN_PIN` — `/admin` 관리자 입장 PIN
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+관리자: `/admin`
 
-## Learn More
+## 배포 (Vercel + Turso)
 
-To learn more about Next.js, take a look at the following resources:
+로컬 SQLite는 Vercel에서 쓸 수 없어서 DB는 Turso를 씁니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1) Turso DB 만들기
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# https://turso.tech 가입 후 CLI 설치
+brew install tursodatabase/tap/turso
+turso auth login
+turso db create duobible
+turso db show duobible --url
+turso db tokens create duobible
+```
 
-## Deploy on Vercel
+스키마 적용 (마이그레이션 SQL을 Turso에 실행):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+turso db shell duobible < prisma/migrations/20260803125213_init/migration.sql
+turso db shell duobible < prisma/migrations/20260803130826_badges_and_admin/migration.sql
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2) Vercel 환경변수
+
+| 이름 | 값 |
+| --- | --- |
+| `TURSO_DATABASE_URL` | `libsql://...turso.io` |
+| `TURSO_AUTH_TOKEN` | Turso 토큰 |
+| `SESSION_SECRET` | 32자 이상 랜덤 |
+| `READING_START_DATE` | `2026-07-20` |
+| `ADMIN_PIN` | 관리자 PIN |
+
+`DATABASE_URL`은 프로덕션에 없어도 됩니다. `TURSO_*`가 있으면 그걸 씁니다.
+
+### 3) 배포
+
+```bash
+npx vercel
+# 또는 GitHub 연결 후 Vercel Import
+```
+
+`data/chapters.json`이 커밋되어 있어야 본문이 나옵니다. 없으면 빌드 전에 `npm run bible:normalize` 실행.
+
+## 스크립트
+
+- `npm run bible:normalize` — `bible.json` → `data/chapters.json`, `data/books.json`
+- `npm run db:migrate` — 로컬 DB 마이그레이션
