@@ -1,17 +1,29 @@
-import { chapterLabel, getChapter, seoulToday } from "@/lib/bible";
+import { chapterLabel, getChapter, seoulReadingDay } from "@/lib/bible";
 import { todayIndex, whoReadChapter } from "@/lib/reads";
 
 export const dynamic = "force-dynamic";
+
+function formatReadTime(date: Date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
 
 export default async function TodayRosterPage() {
   const index = todayIndex();
   const chapter = getChapter(index)!;
   const readers = await whoReadChapter(index);
+  const readingDay = seoulReadingDay();
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-sm text-muted">{seoulToday()}</p>
+        <p className="text-sm text-muted">
+          {readingDay} · 오전 5시 기준
+        </p>
         <h2 className="font-serif text-3xl tracking-tight">오늘 현황</h2>
         <p className="text-sm text-muted">
           {chapterLabel(chapter)} · {readers.length}명 읽음
@@ -25,17 +37,21 @@ export default async function TodayRosterPage() {
       ) : (
         <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-bg-elevated/80">
           {readers.map((reader, i) => (
-            <li key={reader.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
+            <li
+              key={reader.id}
+              className="flex items-center justify-between gap-3 px-4 py-3.5"
+            >
               <div className="flex items-center gap-3">
-                <span className="w-6 text-sm tabular-nums text-muted">{i + 1}</span>
+                <span className="w-6 text-sm tabular-nums text-muted">
+                  {i + 1}
+                </span>
                 <span className="font-medium">{reader.name}</span>
               </div>
-              <time className="text-xs text-muted">
-                {new Intl.DateTimeFormat("ko-KR", {
-                  timeZone: "Asia/Seoul",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(reader.readAt)}
+              <time
+                className="text-xs tabular-nums text-muted"
+                dateTime={reader.readAt.toISOString()}
+              >
+                {formatReadTime(reader.readAt)}
               </time>
             </li>
           ))}

@@ -8,6 +8,7 @@ const SITE_URL =
 type Props = {
   readerName: string;
   dayLabel: string;
+  /** e.g. 창세기 12, 13장 — all chapters read this reading day */
   chapterLabel: string;
   streak: number;
 };
@@ -34,7 +35,6 @@ async function ensureKakao(jsKey: string): Promise<KakaoSDK> {
   if (!window.Kakao) {
     await new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");
-      // Match Kakao demo / latest SDK
       script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.9/kakao.min.js";
       script.crossOrigin = "anonymous";
       script.onload = () => resolve();
@@ -100,7 +100,6 @@ export function ShareButtons({
     try {
       const Kakao = await ensureKakao(jsKey);
 
-      // Host image on Kakao CDN (recommended for feed previews)
       let imageUrl = sourceImageUrl;
       try {
         const scraped = await Kakao.Share.scrapImage({ imageUrl: sourceImageUrl });
@@ -109,8 +108,6 @@ export function ShareButtons({
         // fall back to our own absolute URL
       }
 
-      // Official default feed template (JS demo style):
-      // one bottom CTA via buttonTitle → uses content.link
       Kakao.Share.sendDefault({
         objectType: "feed",
         content: {
@@ -124,7 +121,6 @@ export function ShareButtons({
             webUrl: shareUrl,
           },
         },
-        // Single full-width button under the card (like 초원 앱)
         buttonTitle: "나도 읽으러 가기",
         installTalk: true,
       });

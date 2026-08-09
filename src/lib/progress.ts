@@ -2,20 +2,14 @@ import {
   chapterCount,
   daysSinceStart,
   readingStartDate,
-  seoulToday,
+  seoulReadingDay,
+  shiftYmd,
 } from "@/lib/bible";
 import { prisma } from "@/lib/db";
 
-export function shiftYmd(ymd: string, delta: number): string {
-  const [y, m, d] = ymd.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d + delta));
-  const yy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(date.getUTCDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-}
+export { shiftYmd };
 
-/** Noon KST as UTC Date for a YYYY-MM-DD calendar day */
+/** 12:00 KST as UTC Date for a YYYY-MM-DD reading day */
 export function seoulNoon(ymd: string): Date {
   return new Date(`${ymd}T03:00:00.000Z`);
 }
@@ -51,7 +45,8 @@ export async function alignUserProgress(userId: number, upToIndex: number) {
     upserted += 1;
   }
 
-  const todayIdx = daysSinceStart(readingStartDate(), seoulToday());
+  const today = seoulReadingDay();
+  const todayIdx = daysSinceStart(readingStartDate(), today);
   if (todayIdx >= 0 && todayIdx <= max) {
     const log = await prisma.readLog.findUnique({
       where: { userId_chapterIndex: { userId, chapterIndex: todayIdx } },
@@ -59,7 +54,7 @@ export async function alignUserProgress(userId: number, upToIndex: number) {
     if (log) {
       await prisma.readLog.update({
         where: { id: log.id },
-        data: { readAt: seoulNoon(seoulToday()) },
+        data: { readAt: seoulNoon(today) },
       });
     }
   }

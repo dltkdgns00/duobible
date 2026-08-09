@@ -7,11 +7,13 @@ import {
 } from "@/lib/bible";
 
 export const runtime = "nodejs";
-export const alt = "duobible — 매일 성경 한 장";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+export const dynamic = "force-dynamic";
 
-export default async function OgImage() {
+/**
+ * Daily share preview image for Kakao / OG scrapers.
+ * Query string (?d=) is a cache buster — Kakao and CDNs key on URL.
+ */
+export async function GET() {
   const chapter = getTodayChapter(readingStartDate());
   const day = todayChapterIndex() + 1;
   const label = chapterLabel(chapter);
@@ -27,7 +29,8 @@ export default async function OgImage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "56px 64px",
-          background: "linear-gradient(90deg, #e7eee8 0%, #d7e6db 55%, #c9dbd0 100%)",
+          background:
+            "linear-gradient(90deg, #e7eee8 0%, #d7e6db 55%, #c9dbd0 100%)",
           color: "#1a2420",
           fontFamily: "sans-serif",
         }}
@@ -87,6 +90,13 @@ export default async function OgImage() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      width: 1200,
+      height: 630,
+      headers: {
+        // Short TTL; URL also changes daily via ?d= so scrapers refetch.
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60",
+      },
+    },
   );
 }
