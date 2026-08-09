@@ -54,7 +54,35 @@ export function chapterLabel(chapter: Chapter): string {
   return `${chapter.book} ${chapter.chapter}장`;
 }
 
-/** YYYY-MM-DD in Asia/Seoul */
+/**
+ * Compact phrase for share copy.
+ * e.g. 창세기 12, 13장 / 창세기 50장, 출애굽기 1장
+ */
+export function formatChaptersPhrase(chapters: Chapter[]): string {
+  if (chapters.length === 0) return "오늘 장";
+
+  const sorted = [...chapters].sort((a, b) => a.index - b.index);
+  const parts: string[] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    const book = sorted[i].book;
+    const nums = [sorted[i].chapter];
+    let j = i + 1;
+    while (j < sorted.length && sorted[j].book === book) {
+      nums.push(sorted[j].chapter);
+      j += 1;
+    }
+    parts.push(
+      nums.length === 1
+        ? `${book} ${nums[0]}장`
+        : `${book} ${nums.join(", ")}장`,
+    );
+    i = j;
+  }
+  return parts.join(", ");
+}
+
+/** Calendar YYYY-MM-DD in Asia/Seoul (midnight boundary) */
 export function seoulToday(date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -64,18 +92,54 @@ export function seoulToday(date = new Date()): string {
   }).format(date);
 }
 
+export function shiftYmd(ymd: string, delta: number): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + delta));
+  const yy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(date.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+/**
+ * Reading day in Asia/Seoul with 05:00 cutoff.
+ * 00:00–04:59 still counts as the previous day.
+ */
+export function seoulReadingDay(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const y = parts.find((p) => p.type === "year")!.value;
+  const m = parts.find((p) => p.type === "month")!.value;
+  const d = parts.find((p) => p.type === "day")!.value;
+  let hour = Number(parts.find((p) => p.type === "hour")!.value);
+  if (hour === 24) hour = 0;
+
+  const ymd = `${y}-${m}-${d}`;
+  return hour < 5 ? shiftYmd(ymd, -1) : ymd;
+}
+
 function parseYmd(ymd: string): number {
   const [y, m, d] = ymd.split("-").map(Number);
   return Date.UTC(y, m - 1, d);
 }
 
-export function daysSinceStart(startDate: string, today = seoulToday()): number {
+export function daysSinceStart(
+  startDate: string,
+  today = seoulReadingDay(),
+): number {
   return Math.floor((parseYmd(today) - parseYmd(startDate)) / 86_400_000);
 }
 
 export function getTodayChapterIndex(
   startDate = process.env.READING_START_DATE ?? "2026-01-01",
-  today = seoulToday(),
+  today = seoulReadingDay(),
 ): number {
   const chapters = getChapters();
   const day = daysSinceStart(startDate, today);

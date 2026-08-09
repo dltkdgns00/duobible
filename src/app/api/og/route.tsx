@@ -10,8 +10,10 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const name = (searchParams.get("name") ?? "누군가").slice(0, 16);
-  const chapter = (searchParams.get("chapter") ?? "오늘 장").slice(0, 24);
+  // Allow multi-chapter phrases like "창세기 12, 13장"
+  const chapter = (searchParams.get("chapter") ?? "오늘 장").slice(0, 64);
   const day = (searchParams.get("day") ?? "").slice(0, 24);
+  const chapterFont = chapter.length > 22 ? 32 : chapter.length > 16 ? 36 : 42;
 
   return new ImageResponse(
     (
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
           <div
             style={{
               display: "flex",
-              fontSize: 42,
+              fontSize: chapterFont,
               fontWeight: 700,
               color: "#1a2420",
               lineHeight: 1.3,

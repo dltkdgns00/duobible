@@ -6,15 +6,21 @@ import {
   chapterLabel,
   getChapter,
   readingStartDate,
-  seoulToday,
+  seoulReadingDay,
+  shiftYmd,
 } from "@/lib/bible";
 import {
   chapterIndexForOffset,
   offsetLabel,
   type DayOffset,
 } from "@/lib/offset";
-import { shiftYmd } from "@/lib/progress";
-import { hasRead, getUserStats, todayIndex, whoReadChapter } from "@/lib/reads";
+import {
+  hasRead,
+  getUserStats,
+  sharePhraseForReadingDay,
+  todayIndex,
+  whoReadChapter,
+} from "@/lib/reads";
 import { getSession } from "@/lib/session";
 
 type Props = {
@@ -36,10 +42,15 @@ export async function ReadingView({ offset }: Props) {
     loggedIn && session.userId
       ? await getUserStats(session.userId)
       : { streak: 0 };
+  const shareChapters =
+    loggedIn && session.userId
+      ? await sharePhraseForReadingDay(session.userId)
+      : "";
   const label = chapterLabel(chapter);
   const dayNumber = index + 1;
   const dateLabel = shiftYmd(readingStartDate(), index);
   const isToday = offset === 0;
+  const readingDay = seoulReadingDay();
 
   return (
     <div className="space-y-8">
@@ -56,6 +67,7 @@ export async function ReadingView({ offset }: Props) {
         readerName={session.name}
         dayLabel={`${dayNumber}일차`}
         chapterLabel={label}
+        shareChapters={shareChapters || undefined}
         streak={stats.streak}
         chapterIndex={index}
         isToday={isToday}
@@ -96,7 +108,9 @@ export async function ReadingView({ offset }: Props) {
           </ul>
         )}
         <p className="text-xs text-muted">
-          {isToday ? `오늘 본문: ${label} · 시작일 ${readingStartDate()}` : `${label} · 오늘(${seoulToday()}) 기준 ${offsetLabel(offset)}`}
+          {isToday
+            ? `오늘 본문: ${label} · 시작일 ${readingStartDate()} · 하루 기준 오전 5시`
+            : `${label} · 읽기일 ${readingDay} 기준 ${offsetLabel(offset)}`}
         </p>
       </section>
     </div>

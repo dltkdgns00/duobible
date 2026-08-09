@@ -10,9 +10,11 @@ type Props = {
   loggedIn: boolean;
   readerName?: string | null;
   dayLabel: string;
+  /** Fallback single-chapter label */
   chapterLabel: string;
+  /** Chapters read this reading day (05:00), for share copy */
+  shareChapters?: string;
   streak: number;
-  /** Defaults to today's chapter when omitted */
   chapterIndex?: number;
   isToday?: boolean;
 };
@@ -23,6 +25,7 @@ export function MarkReadButton({
   readerName,
   dayLabel,
   chapterLabel,
+  shareChapters: initialShareChapters,
   streak: initialStreak,
   chapterIndex,
   isToday = true,
@@ -32,6 +35,9 @@ export function MarkReadButton({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(alreadyRead);
   const [streak, setStreak] = useState(initialStreak);
+  const [shareChapters, setShareChapters] = useState(
+    initialShareChapters || chapterLabel,
+  );
 
   async function callRead(method: "POST" | "DELETE") {
     setError(null);
@@ -55,6 +61,11 @@ export function MarkReadButton({
       return false;
     }
     if (typeof data.streak === "number") setStreak(data.streak);
+    if (typeof data.shareChapters === "string" && data.shareChapters) {
+      setShareChapters(data.shareChapters);
+    } else if (method === "DELETE") {
+      setShareChapters(chapterLabel);
+    }
     return true;
   }
 
@@ -102,12 +113,15 @@ export function MarkReadButton({
               ? `연속 ${streak}일째 · 수고하셨어요`
               : "수고하셨어요."}
           </p>
+          {shareChapters ? (
+            <p className="mt-2 text-sm text-accent/90">오늘: {shareChapters}</p>
+          ) : null}
         </div>
-        {readerName && isToday ? (
+        {readerName ? (
           <ShareButtons
             readerName={readerName}
             dayLabel={dayLabel}
-            chapterLabel={chapterLabel}
+            chapterLabel={shareChapters || chapterLabel}
             streak={streak}
           />
         ) : null}

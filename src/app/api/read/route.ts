@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { seoulToday } from "@/lib/bible";
 import { prisma } from "@/lib/db";
-import { scheduledReadAt, seoulNoon } from "@/lib/progress";
-import { getUserStats, todayIndex } from "@/lib/reads";
+import {
+  getUserStats,
+  sharePhraseForReadingDay,
+  todayIndex,
+} from "@/lib/reads";
 import { requireUser } from "@/lib/session";
 
 async function resolveChapterIndex(request: NextRequest) {
@@ -26,12 +28,7 @@ async function resolveChapterIndex(request: NextRequest) {
     }
   }
 
-  return { chapterIndex, today };
-}
-
-function readAtFor(chapterIndex: number, today: number) {
-  if (chapterIndex === today) return seoulNoon(seoulToday());
-  return scheduledReadAt(chapterIndex);
+  return { chapterIndex };
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +41,8 @@ export async function POST(request: NextRequest) {
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: 400 });
   }
-  const { chapterIndex, today } = resolved;
+  const { chapterIndex } = resolved;
+  const readAt = new Date();
 
   await prisma.readLog.upsert({
     where: {
@@ -56,19 +54,21 @@ export async function POST(request: NextRequest) {
     create: {
       userId: user.id,
       chapterIndex,
-      readAt: readAtFor(chapterIndex, today),
+      readAt,
     },
     update: {
-      readAt: readAtFor(chapterIndex, today),
+      readAt,
     },
   });
 
   const stats = await getUserStats(user.id);
+  const shareChapters = await sharePhraseForReadingDay(user.id);
 
   return NextResponse.json({
     ok: true,
     chapterIndex,
     streak: stats.streak,
+    shareChapters,
   });
 }
 
@@ -92,10 +92,12 @@ export async function DELETE(request: NextRequest) {
   });
 
   const stats = await getUserStats(user.id);
+  const shareChapters = await sharePhraseForReadingDay(user.id);
 
   return NextResponse.json({
     ok: true,
     chapterIndex,
     streak: stats.streak,
+    shareChapters,
   });
 }
