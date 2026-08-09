@@ -12,6 +12,9 @@ type Props = {
   dayLabel: string;
   chapterLabel: string;
   streak: number;
+  /** Defaults to today's chapter when omitted */
+  chapterIndex?: number;
+  isToday?: boolean;
 };
 
 export function MarkReadButton({
@@ -21,6 +24,8 @@ export function MarkReadButton({
   dayLabel,
   chapterLabel,
   streak: initialStreak,
+  chapterIndex,
+  isToday = true,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -28,28 +33,39 @@ export function MarkReadButton({
   const [done, setDone] = useState(alreadyRead);
   const [streak, setStreak] = useState(initialStreak);
 
-  async function markRead() {
+  async function callRead(method: "POST" | "DELETE") {
     setError(null);
-    const res = await fetch("/api/read", { method: "POST" });
+    const res = await fetch("/api/read", {
+      method,
+      headers:
+        chapterIndex === undefined
+          ? undefined
+          : { "Content-Type": "application/json" },
+      body:
+        chapterIndex === undefined
+          ? undefined
+          : JSON.stringify({ chapterIndex }),
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(data.error ?? "저장에 실패했어요");
-      return;
+      setError(
+        data.error ??
+          (method === "POST" ? "저장에 실패했어요" : "취소에 실패했어요"),
+      );
+      return false;
     }
     if (typeof data.streak === "number") setStreak(data.streak);
+    return true;
+  }
+
+  async function markRead() {
+    if (!(await callRead("POST"))) return;
     setDone(true);
     startTransition(() => router.refresh());
   }
 
   async function cancelRead() {
-    setError(null);
-    const res = await fetch("/api/read", { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(data.error ?? "취소에 실패했어요");
-      return;
-    }
-    if (typeof data.streak === "number") setStreak(data.streak);
+    if (!(await callRead("DELETE"))) return;
     setDone(false);
     startTransition(() => router.refresh());
   }
@@ -60,7 +76,8 @@ export function MarkReadButton({
         <div className="space-y-1.5">
           <h3 className="text-lg font-semibold text-ink">읽음 체크</h3>
           <p className="text-sm leading-relaxed text-muted">
-            이름과 PIN으로 로그인하면 오늘 장을 읽었다고 표시할 수 있어요.
+            이름과 PIN으로 로그인하면 {isToday ? "오늘" : "이"} 장을 읽었다고
+            표시할 수 있어요.
           </p>
         </div>
         <Link
@@ -77,12 +94,16 @@ export function MarkReadButton({
     return (
       <div className="space-y-3">
         <div className="rounded-2xl border border-accent/30 bg-accent-soft px-5 py-5 text-center">
-          <p className="text-lg font-semibold text-accent">오늘 장을 읽었어요</p>
+          <p className="text-lg font-semibold text-accent">
+            {isToday ? "오늘 장을 읽었어요" : "이 장을 읽었어요"}
+          </p>
           <p className="mt-1 text-sm text-muted">
-            {streak > 0 ? `연속 ${streak}일째 · 수고하셨어요` : "수고하셨어요. 내일 또 만나요."}
+            {streak > 0
+              ? `연속 ${streak}일째 · 수고하셨어요`
+              : "수고하셨어요."}
           </p>
         </div>
-        {readerName ? (
+        {readerName && isToday ? (
           <ShareButtons
             readerName={readerName}
             dayLabel={dayLabel}
