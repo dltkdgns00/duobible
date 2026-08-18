@@ -202,22 +202,40 @@ export function AdminPanel({
                     연속 {user.streak}일 · 읽은 장 {user.readCount}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={pending !== null}
-                  onClick={() =>
-                    run(
-                      { action: "align_user", userId: user.id },
-                      `align_${user.id}`,
-                      `${user.name}님 연속일을 맞췄어요`,
-                    )
-                  }
-                  className="rounded-xl border border-line bg-white/70 px-4 py-3 text-sm font-medium disabled:opacity-60"
-                >
-                  {pending === `align_${user.id}`
-                    ? "처리 중…"
-                    : `${streakTarget}일 맞추기`}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={pending !== null}
+                    onClick={() => {
+                      if (window.confirm(`'${user.name}'님의 PIN을 '0000'으로 초기화하시겠습니까?`)) {
+                        run(
+                          { action: "reset_pin", userId: user.id },
+                          `reset_${user.id}`,
+                          `'${user.name}'님의 PIN을 '0000'으로 초기화했어요.`,
+                        );
+                      }
+                    }}
+                    className="rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 text-red-600 px-4 py-3 text-sm font-medium disabled:opacity-60 transition-colors"
+                  >
+                    {pending === `reset_${user.id}` ? "초기화 중…" : "PIN 초기화"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending !== null}
+                    onClick={() =>
+                      run(
+                        { action: "align_user", userId: user.id },
+                        `align_${user.id}`,
+                        `${user.name}님 연속일을 맞췄어요`,
+                      )
+                    }
+                    className="rounded-xl border border-line bg-white/70 px-4 py-3 text-sm font-medium disabled:opacity-60"
+                  >
+                    {pending === `align_${user.id}`
+                      ? "처리 중…"
+                      : `${streakTarget}일 맞추기`}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
