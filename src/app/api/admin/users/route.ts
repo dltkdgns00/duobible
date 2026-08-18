@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { findChapterIndex, getBooks } from "@/lib/bible";
 import { prisma } from "@/lib/db";
 import { alignUserProgress } from "@/lib/progress";
@@ -19,6 +20,10 @@ const bodySchema = z.discriminatedUnion("action", [
     userId: z.number().int().positive(),
     abbr: z.string().min(1),
     chapter: z.number().int().positive(),
+  }),
+  z.object({
+    action: z.literal("reset_pin"),
+    userId: z.number().int().positive(),
   }),
 ]);
 
@@ -62,6 +67,26 @@ export async function POST(request: Request) {
       userId: user.id,
       streak: stats.streak,
       readCount: stats.readCount,
+    });
+  }
+
+  if (parsed.data.action === "reset_pin") {
+    const user = await prisma.user.findUnique({
+      where: { id: parsed.data.userId },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "사용자를 찾을 수 없어요" }, { status: 404 });
+    }
+    const defaultPin = "0000";
+    const pinHash = await bcrypt.hash(defaultPin, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { pinHash },
+    });
+    return NextResponse.json({
+      ok: true,
+      userId: user.id,
+      message: `'${user.name}'님의 PIN을 '${defaultPin}'으로 초기화했어요.`,
     });
   }
 
