@@ -25,6 +25,10 @@ const bodySchema = z.discriminatedUnion("action", [
     action: z.literal("reset_pin"),
     userId: z.number().int().positive(),
   }),
+  z.object({
+    action: z.literal("get_pin_hash"),
+    userId: z.number().int().positive(),
+  }),
 ]);
 
 export async function POST(request: Request) {
@@ -87,6 +91,22 @@ export async function POST(request: Request) {
       ok: true,
       userId: user.id,
       message: `'${user.name}'님의 PIN을 '${defaultPin}'으로 초기화했어요.`,
+    });
+  }
+
+  if (parsed.data.action === "get_pin_hash") {
+    const user = await prisma.user.findUnique({
+      where: { id: parsed.data.userId },
+      select: { id: true, name: true, pinHash: true },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "사용자를 찾을 수 없어요" }, { status: 404 });
+    }
+    return NextResponse.json({
+      ok: true,
+      userId: user.id,
+      name: user.name,
+      pinHash: user.pinHash,
     });
   }
 

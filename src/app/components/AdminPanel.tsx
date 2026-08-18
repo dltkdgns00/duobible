@@ -73,6 +73,35 @@ export function AdminPanel({
     }
   }
 
+  async function recoverPinHash(userId: number, userName: string) {
+    setPending(`recover_${userId}`);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get_pin_hash", userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "해시를 가져오는 데 실패했어요");
+        return;
+      }
+      
+      const pinHash = data.pinHash;
+      window.prompt(
+        `'${userName}'님의 PIN 해시값입니다. 아래 텍스트를 복사하여 로컬 터미널에서 복구 스크립트를 실행하세요:\n\nnpx tsx scripts/find-pin.ts "<해시값>"`,
+        pinHash
+      );
+      setMessage(`'${userName}'님의 PIN 해시를 성공적으로 조회했어요.`);
+    } catch (err) {
+      setError("에러가 발생했어요");
+    } finally {
+      setPending(null);
+    }
+  }
+
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.refresh();
@@ -218,6 +247,14 @@ export function AdminPanel({
                     className="rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 text-red-600 px-4 py-3 text-sm font-medium disabled:opacity-60 transition-colors"
                   >
                     {pending === `reset_${user.id}` ? "초기화 중…" : "PIN 초기화"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending !== null}
+                    onClick={() => recoverPinHash(user.id, user.name)}
+                    className="rounded-xl border border-line bg-white/70 hover:bg-bg-elevated px-4 py-3 text-sm font-medium disabled:opacity-60 transition-colors"
+                  >
+                    {pending === `recover_${user.id}` ? "조회 중…" : "PIN 복구"}
                   </button>
                   <button
                     type="button"

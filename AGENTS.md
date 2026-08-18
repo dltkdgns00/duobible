@@ -17,7 +17,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - summary: (프로젝트 한 줄 설명)
 
 ## 최근 작업 내역 (Recent Changes)
-- 시각: 2026-08-18 12:49
-- 요청: 잊어버린 핀 번호 복구 방법 제공 및 관리자용 PIN 초기화 기능 구현
-- 결과: 무작위 대입 핀 복구 스크립트 작성 및 관리자 페이지(AdminPanel) 핀 초기화 기능 연동 완료
+- 시각: 2026-08-18 13:00
+- 요청: Turso 원격 DB 연동 대응 및 핀 복구용 해시 조회 기능 구현
+- 결과: 관리자 페이지 내 PIN 복구(해시 조회) 기능 및 로컬 스크립트 인자 기반 brute-force 기능 구현
 - 상태: 성공 (agy)
