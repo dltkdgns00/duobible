@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/app/components/LogoutButton";
+import { ChangePinForm } from "@/app/components/ChangePinForm";
 import { chapterLabel, getChapter, chapterCount } from "@/lib/bible";
 import { getUserStats } from "@/lib/reads";
 import { getSession } from "@/lib/session";
@@ -45,6 +46,8 @@ export default async function MePage() {
           {latest ? chapterLabel(latest) : "아직 없어요"}
         </p>
       </div>
+
+      <ChangePinForm />
 
       <LogoutButton />
     </div>
