@@ -15,6 +15,7 @@ model User {
   createdAt DateTime    @default(now())
   reads     ReadLog[]
   badges    UserBadge[]
+  comments  Comment[]
 }
 
 model ReadLog {
@@ -22,6 +23,19 @@ model ReadLog {
   userId       Int
   chapterIndex Int
   readAt       DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterIndex])
+  @@index([chapterIndex])
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  chapterIndex Int
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, chapterIndex])

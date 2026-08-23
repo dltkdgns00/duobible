@@ -11,6 +11,7 @@ type Props = {
   /** e.g. 창세기 12, 13장 — all chapters read this reading day */
   chapterLabel: string;
   streak: number;
+  meditation?: string;
 };
 
 type KakaoSDK = {
@@ -54,15 +55,19 @@ export function ShareButtons({
   dayLabel,
   chapterLabel,
   streak,
+  meditation,
 }: Props) {
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   const title = `${readerName}님이 ${chapterLabel}을 읽었어요!`;
   const streakText = streak > 0 ? `연속 ${streak}일째 🔥` : dayLabel;
-  const description = `${streakText} · duobible`;
+  const description = `${streakText} · duobible${meditation ? `\n"${meditation}"` : ""}`;
   const shareUrl = SITE_URL;
-  const sourceImageUrl = `${SITE_URL}/api/og?name=${encodeURIComponent(readerName)}&chapter=${encodeURIComponent(chapterLabel)}&day=${encodeURIComponent(streakText)}`;
+  let sourceImageUrl = `${SITE_URL}/api/og?name=${encodeURIComponent(readerName)}&chapter=${encodeURIComponent(chapterLabel)}&day=${encodeURIComponent(streakText)}`;
+  if (meditation) {
+    sourceImageUrl += `&meditation=${encodeURIComponent(meditation)}`;
+  }
 
   async function shareNative() {
     setStatus(null);

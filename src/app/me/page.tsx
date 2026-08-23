@@ -28,6 +28,11 @@ export default async function MePage() {
   const stats = await getUserStats(session.userId);
   const latest = stats.maxIndex >= 0 ? getChapter(stats.maxIndex) : null;
   const startDate = cohortStartDate(cohort);
+  
+  const myComments = await prisma.comment.findMany({
+    where: { userId: session.userId },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="space-y-6">
@@ -64,6 +69,39 @@ export default async function MePage() {
           {latest ? chapterLabel(latest) : "아직 없어요"}
         </p>
       </div>
+
+      {myComments.length > 0 && (
+        <section className="space-y-4 pt-4 border-t border-line">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-ink text-lg">나의 묵상 노트</h3>
+            <span className="text-sm text-muted bg-bg-elevated px-2 py-0.5 rounded-full">
+              총 {myComments.length}개
+            </span>
+          </div>
+          <ul className="space-y-3">
+            {myComments.map((comment) => {
+              const chapter = getChapter(comment.chapterIndex);
+              const label = chapter ? chapterLabel(chapter) : `Chapter ${comment.chapterIndex}`;
+              
+              return (
+                <li key={comment.id} className="rounded-xl bg-bg-elevated/70 p-4 space-y-2 shadow-sm border border-line/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-accent">{label}</span>
+                  </div>
+                  <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">
+                    {comment.content}
+                  </p>
+                  <div className="text-[10px] text-muted">
+                    {new Date(comment.createdAt).toLocaleString("ko-KR", {
+                      year: "numeric", month: "long", day: "numeric"
+                    })}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <ChangePinForm />
 

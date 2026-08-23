@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChapterNav } from "@/app/components/ChapterNav";
 import { ChapterReader } from "@/app/components/ChapterReader";
 import { MarkReadButton } from "@/app/components/MarkReadButton";
+import { CommentsSection } from "@/app/components/CommentsSection";
 import {
   chapterLabel,
   getChapter,
@@ -22,6 +23,7 @@ import {
   whoReadChapter,
 } from "@/lib/reads";
 import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/db";
 
 type Props = {
   offset: DayOffset;
@@ -47,6 +49,17 @@ export async function ReadingView({ offset, cohort = 2 }: Props) {
     loggedIn && session.userId
       ? await sharePhraseForReadingDay(session.userId)
       : "";
+  
+  let myMeditation: string | undefined;
+  if (loggedIn && session.userId) {
+    const comment = await prisma.comment.findUnique({
+      where: { userId_chapterIndex: { userId: session.userId, chapterIndex: index } },
+    });
+    if (comment) {
+      myMeditation = comment.content;
+    }
+  }
+
   const label = chapterLabel(chapter);
   const dayNumber = index + 1;
   const startDate = readingStartDate(cohort);
@@ -73,6 +86,7 @@ export async function ReadingView({ offset, cohort = 2 }: Props) {
         streak={stats.streak}
         chapterIndex={index}
         isToday={isToday}
+        meditation={myMeditation}
       />
 
       <section className="space-y-3 rounded-2xl border border-line bg-bg-elevated/70 p-4">
@@ -118,6 +132,12 @@ export async function ReadingView({ offset, cohort = 2 }: Props) {
             : `${label} · 읽기일 ${readingDay} 기준 ${offsetLabel(offset)}`}
         </p>
       </section>
+
+      <CommentsSection 
+        chapterIndex={index}
+        loggedIn={loggedIn}
+        currentUserId={session.userId}
+      />
     </div>
   );
 }

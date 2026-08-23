@@ -17,6 +17,7 @@ type Props = {
   streak: number;
   chapterIndex?: number;
   isToday?: boolean;
+  meditation?: string;
 };
 
 export function MarkReadButton({
@@ -29,6 +30,7 @@ export function MarkReadButton({
   streak: initialStreak,
   chapterIndex,
   isToday = true,
+  meditation,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -123,6 +125,7 @@ export function MarkReadButton({
             dayLabel={dayLabel}
             chapterLabel={shareChapters || chapterLabel}
             streak={streak}
+            meditation={meditation}
           />
         ) : null}
         <button
