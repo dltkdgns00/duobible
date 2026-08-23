@@ -1,0 +1,29 @@
+import { prisma } from "../src/lib/db";
+
+async function main() {
+  console.log("[Migration] Running production cohort migration...");
+  try {
+    try {
+      await prisma.$executeRawUnsafe("ALTER TABLE User ADD COLUMN cohort INTEGER NOT NULL DEFAULT 2;");
+      console.log("[Migration] Column cohort added via ALTER TABLE.");
+    } catch (e: any) {
+      console.log("[Migration] ALTER TABLE note:", e.message ?? e);
+    }
+
+    const result = await prisma.user.updateMany({
+      where: {
+        createdAt: {
+          lt: new Date("2026-08-23T23:59:59.999Z"),
+        },
+      },
+      data: {
+        cohort: 1,
+      },
+    });
+    console.log(`[Migration] Successfully set ${result.count} existing user(s) to cohort 1.`);
+  } catch (error) {
+    console.error("[Migration] Error during user cohort update:", error);
+  }
+}
+
+main().finally(() => prisma.$disconnect());
