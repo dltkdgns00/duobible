@@ -40,8 +40,13 @@ export async function POST(request: Request) {
   const session = await getSession();
   session.userId = user.id;
   session.name = user.name;
+  session.cohort = user.cohort;
   session.isLoggedIn = true;
   await session.save();
 
-  return NextResponse.json({ ok: true, user: { id: user.id, name: user.name } });
+  return NextResponse.json({
+    ok: true,
+    user: { id: user.id, name: user.name, cohort: user.cohort },
+  });
 }
+

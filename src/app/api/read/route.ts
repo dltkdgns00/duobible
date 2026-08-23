@@ -7,8 +7,8 @@ import {
 } from "@/lib/reads";
 import { requireUser } from "@/lib/session";
 
-async function resolveChapterIndex(request: NextRequest) {
-  const today = todayIndex();
+async function resolveChapterIndex(request: NextRequest, cohort: number) {
+  const today = todayIndex(cohort);
   let chapterIndex = today;
 
   const contentType = request.headers.get("content-type") ?? "";
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "로그인이 필요해요" }, { status: 401 });
   }
 
-  const resolved = await resolveChapterIndex(request);
+  const resolved = await resolveChapterIndex(request, user.cohort);
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: 400 });
   }
@@ -78,7 +78,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "로그인이 필요해요" }, { status: 401 });
   }
 
-  const resolved = await resolveChapterIndex(request);
+  const resolved = await resolveChapterIndex(request, user.cohort);
   if ("error" in resolved) {
     return NextResponse.json({ error: resolved.error }, { status: 400 });
   }

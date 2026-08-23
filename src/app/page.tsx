@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { ReadingView } from "@/app/components/ReadingView";
 import {
   chapterLabel,
@@ -6,6 +7,8 @@ import {
   readingStartDate,
   todayChapterIndex,
 } from "@/lib/bible";
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +46,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+
 export default async function HomePage() {
-  return <ReadingView offset={0} />;
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.userId) {
+    redirect("/login");
+  }
+
+  // 세션의 cohort가 없거나 최신 DB 상태를 반영하기 위해 조회
+  let cohort = session.cohort;
+  if (!cohort) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { cohort: true },
+    });
+    cohort = user?.cohort ?? 2;
+    session.cohort = cohort;
+    await session.save();
+  }
+
+  return <ReadingView offset={0} cohort={cohort} />;
 }
+

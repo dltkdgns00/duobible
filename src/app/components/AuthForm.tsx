@@ -11,6 +11,7 @@ export function AuthForm() {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
+  const [cohort, setCohort] = useState<number>(2);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -32,7 +33,11 @@ export function AuthForm() {
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), pin }),
+        body: JSON.stringify({
+          name: name.trim(),
+          pin,
+          ...(mode === "register" ? { cohort } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -96,21 +101,34 @@ export function AuthForm() {
           />
         </label>
         {mode === "register" ? (
-          <label className="block space-y-1.5">
-            <span className="text-sm text-muted">PIN 확인</span>
-            <input
-              value={pinConfirm}
-              onChange={(e) =>
-                setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))
-              }
-              required
-              inputMode="numeric"
-              pattern="\d{4}"
-              autoComplete="new-password"
-              placeholder="••••"
-              className="w-full rounded-xl border border-line bg-white/70 px-4 py-3 tracking-[0.35em] outline-none ring-accent focus:ring-2"
-            />
-          </label>
+          <>
+            <label className="block space-y-1.5">
+              <span className="text-sm text-muted">참여 기수</span>
+              <select
+                value={cohort}
+                onChange={(e) => setCohort(Number(e.target.value))}
+                className="w-full rounded-xl border border-line bg-white/70 px-4 py-3 outline-none ring-accent focus:ring-2"
+              >
+                <option value={2}>2기 (새로 시작 · 창세기 1장부터)</option>
+                <option value={1}>1기 (기존 그룹 참여)</option>
+              </select>
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm text-muted">PIN 확인</span>
+              <input
+                value={pinConfirm}
+                onChange={(e) =>
+                  setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))
+                }
+                required
+                inputMode="numeric"
+                pattern="\d{4}"
+                autoComplete="new-password"
+                placeholder="••••"
+                className="w-full rounded-xl border border-line bg-white/70 px-4 py-3 tracking-[0.35em] outline-none ring-accent focus:ring-2"
+              />
+            </label>
+          </>
         ) : null}
 
         {error ? <p className="text-sm text-warn">{error}</p> : null}

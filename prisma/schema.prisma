@@ -11,6 +11,7 @@ model User {
   id        Int         @id @default(autoincrement())
   name      String      @unique
   pinHash   String
+  cohort    Int         @default(2)
   createdAt DateTime    @default(now())
   reads     ReadLog[]
   badges    UserBadge[]

@@ -1,9 +1,11 @@
 import {
   chapterCount,
+  cohortStartDate,
   daysSinceStart,
   readingStartDate,
   seoulReadingDay,
   shiftYmd,
+  todayChapterIndex,
 } from "@/lib/bible";
 import { prisma } from "@/lib/db";
 
@@ -21,8 +23,16 @@ export function scheduledReadAt(chapterIndex: number, startDate = readingStartDa
 /**
  * Ensure chapters 0..upToIndex exist, with readAt aligned to reading schedule days.
  */
-export async function alignUserProgress(userId: number, upToIndex: number) {
-  const max = Math.min(upToIndex, chapterCount() - 1);
+export async function alignUserProgress(userId: number, upToIndex?: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { cohort: true },
+  });
+  const cohort = user?.cohort ?? 2;
+  const startDate = cohortStartDate(cohort);
+  const targetUpTo = upToIndex ?? todayChapterIndex(cohort);
+
+  const max = Math.min(targetUpTo, chapterCount() - 1);
   if (max < 0) return { upserted: 0 };
 
   const existing = await prisma.readLog.findMany({
@@ -33,7 +43,7 @@ export async function alignUserProgress(userId: number, upToIndex: number) {
 
   let upserted = 0;
   for (let i = 0; i <= max; i += 1) {
-    const readAt = scheduledReadAt(i);
+    const readAt = scheduledReadAt(i, startDate);
     const id = byIndex.get(i);
     if (id) {
       await prisma.readLog.update({ where: { id }, data: { readAt } });
@@ -46,7 +56,7 @@ export async function alignUserProgress(userId: number, upToIndex: number) {
   }
 
   const today = seoulReadingDay();
-  const todayIdx = daysSinceStart(readingStartDate(), today);
+  const todayIdx = daysSinceStart(startDate, today);
   if (todayIdx >= 0 && todayIdx <= max) {
     const log = await prisma.readLog.findUnique({
       where: { userId_chapterIndex: { userId, chapterIndex: todayIdx } },
@@ -61,3 +71,4 @@ export async function alignUserProgress(userId: number, upToIndex: number) {
 
   return { upserted };
 }
+

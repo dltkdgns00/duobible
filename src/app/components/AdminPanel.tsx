@@ -13,9 +13,11 @@ type BookMeta = {
 type UserRow = {
   id: number;
   name: string;
+  cohort: number;
   readCount: number;
   maxIndex: number;
   streak: number;
+  todayTarget?: number;
 };
 
 type Props = {
@@ -113,8 +115,7 @@ export function AdminPanel({
         <div className="space-y-1">
           <h3 className="font-semibold">그룹 진도 맞추기</h3>
           <p className="text-sm leading-relaxed text-muted">
-            오늘이 {streakTarget}일차예요. 모든 멤버를 오늘 장까지 읽음 처리하고
-            연속일도 {streakTarget}일로 맞춥니다.
+            모든 멤버를 각자의 기수(1기/2기) 오늘 장까지 읽음 처리하고 연속일도 기수별 오늘 목표일에 맞춥니다.
           </p>
         </div>
         <button
@@ -124,14 +125,14 @@ export function AdminPanel({
             run(
               { action: "align_all" },
               "align_all",
-              `전원 ${streakTarget}일 연속으로 맞췄어요`,
+              `전원 각 기수별 오늘 진도로 맞췄어요`,
             )
           }
           className="btn-primary flex min-h-14 w-full items-center justify-center rounded-2xl text-base font-semibold"
         >
           {pending === "align_all"
             ? "처리 중…"
-            : `전원 ${streakTarget}일 연속으로 맞추기`}
+            : `전원 기수별 오늘 진도로 맞추기`}
         </button>
       </div>
 
@@ -226,12 +227,33 @@ export function AdminPanel({
                 className="flex flex-col gap-3 rounded-2xl border border-line bg-bg-elevated/80 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-medium">{user.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{user.name}</p>
+                    <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+                      {user.cohort}기
+                    </span>
+                  </div>
                   <p className="mt-1 text-sm text-muted">
-                    연속 {user.streak}일 · 읽은 장 {user.readCount}
+                    연속 {user.streak}일 · 읽은 장 {user.readCount} (오늘 목표: {user.todayTarget ?? streakTarget}일차)
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={user.cohort}
+                    disabled={pending !== null}
+                    onChange={(e) => {
+                      const newCohort = Number(e.target.value);
+                      run(
+                        { action: "change_cohort", userId: user.id, cohort: newCohort },
+                        `cohort_${user.id}`,
+                        `'${user.name}'님의 기수를 ${newCohort}기로 변경했어요.`,
+                      );
+                    }}
+                    className="rounded-xl border border-line bg-white/70 px-2.5 py-2.5 text-xs font-medium outline-none ring-accent focus:ring-2"
+                  >
+                    <option value={1}>1기로 변경</option>
+                    <option value={2}>2기로 변경</option>
+                  </select>
                   <button
                     type="button"
                     disabled={pending !== null}
@@ -244,7 +266,7 @@ export function AdminPanel({
                         );
                       }
                     }}
-                    className="rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 text-red-600 px-4 py-3 text-sm font-medium disabled:opacity-60 transition-colors"
+                    className="rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 text-red-600 px-3 py-2.5 text-xs font-medium disabled:opacity-60 transition-colors"
                   >
                     {pending === `reset_${user.id}` ? "초기화 중…" : "PIN 초기화"}
                   </button>
@@ -252,7 +274,7 @@ export function AdminPanel({
                     type="button"
                     disabled={pending !== null}
                     onClick={() => recoverPinHash(user.id, user.name)}
-                    className="rounded-xl border border-line bg-white/70 hover:bg-bg-elevated px-4 py-3 text-sm font-medium disabled:opacity-60 transition-colors"
+                    className="rounded-xl border border-line bg-white/70 hover:bg-bg-elevated px-3 py-2.5 text-xs font-medium disabled:opacity-60 transition-colors"
                   >
                     {pending === `recover_${user.id}` ? "조회 중…" : "PIN 복구"}
                   </button>
@@ -266,11 +288,11 @@ export function AdminPanel({
                         `${user.name}님 연속일을 맞췄어요`,
                       )
                     }
-                    className="rounded-xl border border-line bg-white/70 px-4 py-3 text-sm font-medium disabled:opacity-60"
+                    className="rounded-xl border border-line bg-white/70 px-3 py-2.5 text-xs font-medium disabled:opacity-60"
                   >
                     {pending === `align_${user.id}`
                       ? "처리 중…"
-                      : `${streakTarget}일 맞추기`}
+                      : `${user.todayTarget ?? streakTarget}일 맞추기`}
                   </button>
                 </div>
               </li>

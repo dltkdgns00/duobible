@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
 import { chapterLabel, getChapter, seoulReadingDay } from "@/lib/bible";
+import { prisma } from "@/lib/db";
 import { todayIndex, whoReadChapter } from "@/lib/reads";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +16,33 @@ function formatReadTime(date: Date) {
 }
 
 export default async function TodayRosterPage() {
-  const index = todayIndex();
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.userId) {
+    redirect("/login");
+  }
+
+  let cohort = session.cohort;
+  if (!cohort) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { cohort: true },
+    });
+    cohort = user?.cohort ?? 2;
+    session.cohort = cohort;
+    await session.save();
+  }
+
+  const index = todayIndex(cohort);
   const chapter = getChapter(index)!;
   const readers = await whoReadChapter(index);
   const readingDay = seoulReadingDay();
+  const dayNumber = index + 1;
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="text-sm text-muted">
-          {readingDay} · 오전 5시 기준
+          {readingDay} · 오전 5시 기준 · {cohort}기 ({dayNumber}일차)
         </p>
         <h2 className="font-serif text-3xl tracking-tight">오늘 현황</h2>
         <p className="text-sm text-muted">
@@ -46,6 +66,9 @@ export default async function TodayRosterPage() {
                   {i + 1}
                 </span>
                 <span className="font-medium">{reader.name}</span>
+                <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
+                  {reader.cohort}기
+                </span>
               </div>
               <time
                 className="text-xs tabular-nums text-muted"
@@ -60,3 +83,4 @@ export default async function TodayRosterPage() {
     </div>
   );
 }
+

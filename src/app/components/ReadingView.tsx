@@ -25,10 +25,11 @@ import { getSession } from "@/lib/session";
 
 type Props = {
   offset: DayOffset;
+  cohort?: number;
 };
 
-export async function ReadingView({ offset }: Props) {
-  const today = todayIndex();
+export async function ReadingView({ offset, cohort = 2 }: Props) {
+  const today = todayIndex(cohort);
   const index = chapterIndexForOffset(offset, today);
   const chapter = getChapter(index);
   if (!chapter) return null;
@@ -48,7 +49,8 @@ export async function ReadingView({ offset }: Props) {
       : "";
   const label = chapterLabel(chapter);
   const dayNumber = index + 1;
-  const dateLabel = shiftYmd(readingStartDate(), index);
+  const startDate = readingStartDate(cohort);
+  const dateLabel = shiftYmd(startDate, index);
   const isToday = offset === 0;
   const readingDay = seoulReadingDay();
 
@@ -58,14 +60,14 @@ export async function ReadingView({ offset }: Props) {
 
       <ChapterReader
         chapter={chapter}
-        dayLabel={`${dateLabel} · 그룹 ${dayNumber}일차${isToday ? "" : ` · ${offsetLabel(offset)}`}`}
+        dayLabel={`${dateLabel} · ${cohort}기 ${dayNumber}일차${isToday ? "" : ` · ${offsetLabel(offset)}`}`}
       />
 
       <MarkReadButton
         alreadyRead={alreadyRead}
         loggedIn={loggedIn}
         readerName={session.name}
-        dayLabel={`${dayNumber}일차`}
+        dayLabel={`${cohort}기 ${dayNumber}일차`}
         chapterLabel={label}
         shareChapters={shareChapters || undefined}
         streak={stats.streak}
@@ -95,9 +97,12 @@ export async function ReadingView({ offset }: Props) {
             {readers.slice(0, 12).map((r) => (
               <li
                 key={r.id}
-                className="rounded-full bg-accent-soft px-3 py-1 text-sm text-accent"
+                className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-3 py-1 text-sm text-accent"
               >
-                {r.name}
+                <span>{r.name}</span>
+                <span className="text-[11px] opacity-75 font-normal">
+                  {r.cohort}기
+                </span>
               </li>
             ))}
             {readers.length > 12 ? (
@@ -109,10 +114,11 @@ export async function ReadingView({ offset }: Props) {
         )}
         <p className="text-xs text-muted">
           {isToday
-            ? `오늘 본문: ${label} · 시작일 ${readingStartDate()} · 하루 기준 오전 5시`
+            ? `오늘 본문: ${label} · ${cohort}기 시작일 ${startDate} · 하루 기준 오전 5시`
             : `${label} · 읽기일 ${readingDay} 기준 ${offsetLabel(offset)}`}
         </p>
       </section>
     </div>
   );
 }
+

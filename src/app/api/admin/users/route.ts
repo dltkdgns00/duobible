@@ -16,6 +16,11 @@ const bodySchema = z.discriminatedUnion("action", [
     userId: z.number().int().positive(),
   }),
   z.object({
+    action: z.literal("change_cohort"),
+    userId: z.number().int().positive(),
+    cohort: z.number().int().min(1),
+  }),
+  z.object({
     action: z.literal("catch_up"),
     userId: z.number().int().positive(),
     abbr: z.string().min(1),
@@ -42,18 +47,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "요청이 올바르지 않아요" }, { status: 400 });
   }
 
-  const upTo = todayIndex();
+  if (parsed.data.action === "change_cohort") {
+    const user = await prisma.user.findUnique({
+      where: { id: parsed.data.userId },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "사용자를 찾을 수 없어요" }, { status: 404 });
+    }
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { cohort: parsed.data.cohort },
+    });
+    return NextResponse.json({
+      ok: true,
+      userId: updated.id,
+      cohort: updated.cohort,
+      message: `'${user.name}'님의 기수를 ${updated.cohort}기로 변경했어요.`,
+    });
+  }
 
   if (parsed.data.action === "align_all") {
-    const users = await prisma.user.findMany({ select: { id: true } });
+    const users = await prisma.user.findMany({ select: { id: true, cohort: true } });
     for (const user of users) {
-      await alignUserProgress(user.id, upTo);
+      await alignUserProgress(user.id);
     }
     return NextResponse.json({
       ok: true,
       alignedUsers: users.length,
-      upToIndex: upTo,
-      streakDays: upTo + 1,
     });
   }
 
@@ -64,7 +84,7 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "사용자를 찾을 수 없어요" }, { status: 404 });
     }
-    await alignUserProgress(user.id, upTo);
+    await alignUserProgress(user.id);
     const stats = await getUserStats(user.id);
     return NextResponse.json({
       ok: true,
@@ -157,15 +177,18 @@ export async function GET() {
     rows.push({
       id: user.id,
       name: user.name,
+      cohort: user.cohort,
       readCount: stats.readCount,
       maxIndex: stats.maxIndex,
       streak: stats.streak,
+      todayTarget: todayIndex(user.cohort) + 1,
     });
   }
 
   return NextResponse.json({
     users: rows,
-    todayIndex: todayIndex(),
-    streakTarget: todayIndex() + 1,
+    todayIndex1: todayIndex(1),
+    todayIndex2: todayIndex(2),
   });
 }
+

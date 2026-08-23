@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 export type SessionData = {
   userId?: number;
   name?: string;
+  cohort?: number;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
 };
@@ -28,7 +29,7 @@ export async function requireUser() {
   if (!session.isLoggedIn || !session.userId || !session.name) {
     return null;
   }
-  return { id: session.userId, name: session.name };
+  return { id: session.userId, name: session.name, cohort: session.cohort ?? 2 };
 }
 
 export async function requireAdmin() {

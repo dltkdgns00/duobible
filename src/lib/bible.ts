@@ -148,9 +148,26 @@ export function getTodayChapterIndex(
   return day;
 }
 
+export const DEFAULT_COHORT = 2;
+
+export function cohortStartDate(cohort = DEFAULT_COHORT): string {
+  if (cohort === 1) {
+    return process.env.READING_START_DATE ?? "2026-07-20";
+  }
+  if (cohort === 2) {
+    return process.env.READING_START_DATE_COHORT_2 ?? "2026-08-24";
+  }
+  const envKey = `READING_START_DATE_COHORT_${cohort}`;
+  return process.env[envKey] ?? (cohort === 1 ? "2026-07-20" : "2026-08-24");
+}
+
 export function getTodayChapter(
-  startDate = process.env.READING_START_DATE ?? "2026-01-01",
+  startDateOrCohort: string | number = DEFAULT_COHORT,
 ): Chapter {
+  const startDate =
+    typeof startDateOrCohort === "number"
+      ? cohortStartDate(startDateOrCohort)
+      : startDateOrCohort;
   return getChapters()[getTodayChapterIndex(startDate)];
 }
 
@@ -163,10 +180,11 @@ export function chapterCount(): number {
   return getChapters().length;
 }
 
-export function readingStartDate() {
-  return process.env.READING_START_DATE ?? "2026-01-01";
+export function readingStartDate(cohort = DEFAULT_COHORT) {
+  return cohortStartDate(cohort);
 }
 
-export function todayChapterIndex() {
-  return getTodayChapterIndex(readingStartDate());
+export function todayChapterIndex(cohort = DEFAULT_COHORT) {
+  return getTodayChapterIndex(cohortStartDate(cohort));
 }
+

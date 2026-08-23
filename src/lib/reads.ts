@@ -71,12 +71,13 @@ export async function sharePhraseForReadingDay(
 export async function whoReadChapter(chapterIndex: number) {
   const logs = await prisma.readLog.findMany({
     where: { chapterIndex },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, cohort: true } } },
     orderBy: { readAt: "asc" },
   });
   return logs.map((l) => ({
     id: l.user.id,
     name: l.user.name,
+    cohort: l.user.cohort,
     readAt: l.readAt,
   }));
 }
@@ -90,6 +91,7 @@ export async function hasRead(userId: number, chapterIndex: number) {
   return Boolean(found);
 }
 
-export function todayIndex() {
-  return getTodayChapterIndex(readingStartDate());
+export function todayIndex(cohort?: number) {
+  return getTodayChapterIndex(readingStartDate(cohort));
 }
+
