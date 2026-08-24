@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { ChangeEvent } from "react";
-import { hrefForOffset } from "@/lib/offset";
 
 type Props = {
   todayYmd: string;
@@ -24,7 +23,8 @@ export function DatePicker({ todayYmd, currentYmd, minYmd, maxYmd }: Props) {
     const tDate = Date.UTC(ty, tm - 1, td);
 
     const diffDays = Math.round((pDate - tDate) / 86400000);
-    router.push(hrefForOffset(diffDays));
+    const href = diffDays === 0 ? "/" : `/${diffDays}`;
+    router.push(href);
   };
 
   return (
