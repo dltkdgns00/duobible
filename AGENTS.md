@@ -16,6 +16,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - summary: (프로젝트 한 줄 설명)
 
 ## 최근 작업 내역 (Recent Changes)
+- 시각: 2026-08-24 23:31
+- 요청: 지금 -1, -2 넘어가는것도 좋은데 데이트피커도 있었으면 좋겠어 https://github.com/dltkdgns00/duoprayer.git의 맨 마지막 커밋을 참고해 너랑 둘이 형제야
+- 결과: `duoprayer`의 최신 커밋을 참고하여, 특정 날짜로 이동할 수 있는 `DatePicker` 컴포넌트를 `duobible`에 새롭게 추가하고 `ChapterNav` 컴포넌트에 연동 반영하였습니다.
+- 상태: 성공 (agy)
 - 시각: 2026-08-24 00:18
 - 요청: 좋아 이제 댓글 기능을 만들거야 장 별로 댓글을 적게 할거야 짧은 묵상정도 적을수 있게 댓글 나중에 볼수 있게도 할거고 우리가 카카오톡 인증할 때 사진도 같이 보내잖아 그때 적은 짧은 묵상 같이나오면 좋을거같거든
 - 결과: `Comment` 모델 추가 및 `/api/comments` 라우트 구현. 각 성경 장 하단에 '묵상 노트' UI(`CommentsSection.tsx`)를 추가하여 다른 사람들의 묵상(전체 공개)과 함께 장당 하나의 내 묵상(작성/수정)을 남길 수 있도록 함. 마이페이지에 '나의 묵상 노트'를 추가해 모아볼 수 있도록 구성. 내 묵상을 남긴 경우 OG 이미지 API `/api/og`에 말풍선 형태로 묵상이 그려지며 카카오톡 공유 시 포함되도록 구현 완료.

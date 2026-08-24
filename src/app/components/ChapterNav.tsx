@@ -6,6 +6,8 @@ import {
   offsetLabel,
   type DayOffset,
 } from "@/lib/offset";
+import { seoulReadingDay, shiftYmd } from "@/lib/bible";
+import { DatePicker } from "./DatePicker";
 
 type Props = {
   offset: DayOffset;
@@ -21,6 +23,9 @@ export function ChapterNav({ offset, todayIndex }: Props) {
   const canPrev = isOpenOffset(prev, todayIndex);
   const canNext = isOpenOffset(next, todayIndex);
 
+  const todayYmd = seoulReadingDay();
+  const currentYmd = shiftYmd(todayYmd, offset);
+
   return (
     <nav aria-label="장 이동" className="space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -35,9 +40,17 @@ export function ChapterNav({ offset, todayIndex }: Props) {
           <span className="px-2 py-2 text-sm text-muted/40">←</span>
         )}
 
-        <p className="text-sm text-muted">
-          {offset === 0 ? "오늘 장" : `${offsetLabel(offset)} 장`}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm text-muted">
+            {offset === 0 ? "오늘 장" : `${offsetLabel(offset)} 장`}
+          </p>
+          <DatePicker
+            todayYmd={todayYmd}
+            currentYmd={currentYmd}
+            minYmd={shiftYmd(todayYmd, min)}
+            maxYmd={todayYmd}
+          />
+        </div>
 
         {canNext ? (
           <Link
